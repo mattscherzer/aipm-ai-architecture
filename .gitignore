@@ -1,0 +1,7 @@
+.DS_Store
+Thumbs.db
+.rumdl_cache/
+.idea/
+.vscode/
+*.drawio
+*.psd
