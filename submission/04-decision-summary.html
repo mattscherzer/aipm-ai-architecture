@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HR-Onboarding Assistant: Privacy Failure Decision Summary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Public+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F1F5F9;
+    --card: #FFFFFF;
+    --ink: #0F172A;
+    --muted: #475569;
+    --accent: #2563EB;
+    --navy: #1E3A8A;
+    --border: #CBD5E1;
+    --head: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+    --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #0F172A; overflow: hidden; }
+  body { font-family: var(--body); color: var(--ink); }
+
+  #viewport { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  #stage { width: 1920px; height: 1080px; flex: none; position: relative; background: var(--bg); transform-origin: center center; overflow: hidden; }
+
+  /* left navigation rail */
+  #rail { position: absolute; left: 0; top: 0; bottom: 0; width: 120px; background: var(--navy); display: flex; flex-direction: column; align-items: center; gap: 28px; padding-top: 96px; z-index: 5; }
+  #rail button { width: 64px; height: 64px; border-radius: 50%; border: 2px solid rgba(255,255,255,.45); background: transparent; color: #fff; font: 700 28px var(--head); cursor: pointer; }
+  #rail button.on { background: #fff; color: var(--navy); border-color: #fff; }
+
+  .slide { position: absolute; left: 120px; top: 0; right: 0; bottom: 0; padding: 72px 96px 0 96px; opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+  .slide.on { opacity: 1; pointer-events: auto; }
+
+  .eyebrow { font: 600 24px var(--body); letter-spacing: 3px; text-transform: uppercase; color: var(--accent); }
+  h1 { font: 800 60px/1.1 var(--head); color: var(--ink); margin-top: 10px; }
+  .sub { font: 400 28px/1.4 var(--body); color: var(--muted); margin-top: 10px; }
+  .foot { position: absolute; left: 96px; right: 96px; bottom: 40px; display: flex; justify-content: space-between; font: 500 22px var(--body); color: var(--muted); }
+
+  .card { background: var(--card); border: 2px solid var(--border); border-radius: 20px; padding: 36px; }
+  .chip { display: inline-block; font: 600 20px var(--body); letter-spacing: 2px; text-transform: uppercase; padding: 6px 16px; border-radius: 999px; }
+  .chip.fact { background: var(--navy); color: #fff; }
+  .chip.assumed { border: 2px dashed var(--muted); color: var(--muted); background: transparent; }
+  .chip.action { background: var(--accent); color: #fff; }
+
+  /* slide 1: flow */
+  .flow { display: flex; align-items: center; gap: 12px; margin-top: 44px; }
+  .node { flex: 1; min-height: 176px; background: var(--card); border: 2px solid var(--navy); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 12px; }
+  .node b { font: 700 28px var(--head); }
+  .node span { font: 400 22px var(--body); color: var(--muted); }
+  .node.dashed { border: 2px dashed var(--muted); }
+  .stack { flex: 1.15; display: flex; flex-direction: column; gap: 10px; }
+  .stack .node { min-height: 0; padding: 12px 10px; flex-direction: row; gap: 10px; }
+  .stack .node b { font: 600 24px var(--body); }
+  .arrow { flex: none; width: 44px; height: 24px; }
+  .cards1 { display: flex; gap: 32px; margin-top: 44px; }
+  .cards1 .card { flex: 1; display: flex; flex-direction: column; gap: 20px; min-height: 380px; }
+  .msg { display: flex; gap: 18px; align-items: flex-start; }
+  .avatar { flex: none; width: 56px; height: 56px; border-radius: 12px; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; font: 700 26px var(--head); }
+  .msg .who { font: 600 22px var(--body); color: var(--muted); }
+  .msg .txt { font: 500 30px/1.35 var(--body); margin-top: 4px; }
+  .seen { display: flex; align-items: center; gap: 12px; font: 600 26px var(--body); color: var(--navy); margin-top: auto; }
+  .big { font: 700 34px/1.25 var(--head); }
+  .small { font: 400 26px/1.4 var(--body); color: var(--muted); }
+  .checks { display: flex; flex-direction: column; gap: 18px; }
+  .checks div { display: flex; align-items: center; gap: 16px; font: 500 30px var(--body); }
+
+  /* slide 2: matrix */
+  .body2 { display: flex; gap: 32px; margin-top: 40px; }
+  .matrix { width: 1100px; padding: 28px 32px; }
+  .mrow { display: flex; align-items: center; height: 76px; border-top: 1px solid var(--border); }
+  .mrow.head { height: 64px; border-top: none; }
+  .rk { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--navy); color: #fff; font: 700 24px var(--head); display: flex; align-items: center; justify-content: center; margin-right: 18px; }
+  .nm { flex: none; width: 408px; font: 600 28px var(--body); }
+  .col { flex: none; width: 140px; display: flex; justify-content: center; }
+  .mrow.head .col { font: 600 22px/1.2 var(--body); color: var(--muted); text-align: center; }
+  .cf { flex: none; width: 130px; text-align: right; font: 500 22px var(--body); color: var(--muted); }
+  .dot { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--border); }
+  .dot.full { background: var(--accent); border-color: var(--accent); }
+  .dot.half { border-color: var(--accent); background: linear-gradient(90deg, var(--accent) 50%, #fff 50%); }
+  .legend { display: flex; gap: 32px; margin-top: 18px; font: 400 22px var(--body); color: var(--muted); align-items: center; }
+  .legend span { display: flex; align-items: center; gap: 10px; }
+  .legend .dot { width: 22px; height: 22px; border-width: 2px; }
+  .side { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+  .side .card { padding: 28px 32px; }
+  .side .lab { font: 600 22px var(--body); letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  .side .t { font: 500 28px/1.35 var(--body); }
+  .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .tags span { font: 500 24px var(--body); padding: 8px 18px; border: 2px dashed var(--muted); border-radius: 999px; color: var(--ink); }
+  .next { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .next .lab { color: #DBEAFE; }
+  .next .t { font: 700 34px/1.2 var(--head); }
+  .next .s { font: 400 26px/1.35 var(--body); margin-top: 8px; color: #EFF6FF; }
+
+  /* slide 3 */
+  .steps { display: flex; align-items: center; gap: 12px; margin-top: 44px; }
+  .step { flex: 1; align-self: stretch; display: flex; flex-direction: column; gap: 14px; min-height: 330px; }
+  .num { width: 60px; height: 60px; border-radius: 50%; background: var(--navy); color: #fff; font: 700 30px var(--head); display: flex; align-items: center; justify-content: center; }
+  .step h3 { font: 700 36px var(--head); }
+  .step p { font: 400 28px/1.35 var(--body); color: var(--ink); }
+  .owner { margin-top: auto; font: 500 22px var(--body); color: var(--muted); }
+  .tiles { display: flex; gap: 24px; margin-top: 36px; }
+  .tile { flex: 1; background: var(--navy); border-radius: 20px; padding: 30px 34px; color: #fff; }
+  .tile .lab { font: 600 22px var(--body); letter-spacing: 2px; text-transform: uppercase; color: #BFDBFE; margin-bottom: 10px; }
+  .tile .t { font: 600 30px/1.3 var(--body); }
+  .owner-chip { display: inline-block; margin-top: 14px; font: 600 24px var(--body); background: var(--card); border: 2px solid var(--border); border-radius: 999px; padding: 8px 22px; color: var(--navy); }
+
+  /* speaker notes overlay */
+  #notes { position: fixed; left: 0; right: 0; bottom: 0; max-height: 36vh; overflow: auto; background: #0F172A; color: #F1F5F9; font: 400 20px/1.55 var(--body); padding: 20px 40px 28px; display: none; border-top: 3px solid var(--accent); z-index: 20; }
+  #notes.show { display: block; }
+  #notes small { display: block; font: 600 14px var(--body); letter-spacing: 2px; text-transform: uppercase; color: #93C5FD; margin-bottom: 8px; }
+  #hint { position: fixed; right: 14px; top: 10px; font: 500 13px var(--body); color: #94A3B8; z-index: 30; }
+  .notes-src { display: none; }
+</style>
+</head>
+<body>
+<div id="viewport">
+<div id="stage">
+
+  <nav id="rail" aria-label="Slides">
+    <button data-go="0" aria-label="Slide 1">1</button>
+    <button data-go="1" aria-label="Slide 2">2</button>
+    <button data-go="2" aria-label="Slide 3">3</button>
+  </nav>
+
+  <!-- SLIDE 1 -->
+  <section class="slide" id="s1">
+    <p class="eyebrow">1 · What is broken</p>
+    <h1>A private reminder reached the whole cohort</h1>
+    <p class="sub">HR-onboarding assistant: guides new hires through tasks and policies in Slack / Teams</p>
+
+    <div class="flow" aria-label="Request flow">
+      <div class="node"><b>Shared channel</b><span>many readers</span></div>
+      <svg class="arrow" viewBox="0 0 44 24"><path d="M2 12H36M28 4l10 8-10 8" stroke="#2563EB" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="node"><b>Orchestrator</b><span>builds the prompt</span></div>
+      <svg class="arrow" viewBox="0 0 44 24"><path d="M2 12H36M28 4l10 8-10 8" stroke="#2563EB" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="stack">
+        <div class="node dashed"><b>HR checklist API</b></div>
+        <div class="node dashed"><b>Document index</b></div>
+        <div class="node dashed"><b>Memory</b></div>
+      </div>
+      <svg class="arrow" viewBox="0 0 44 24"><path d="M2 12H36M28 4l10 8-10 8" stroke="#2563EB" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="node"><b>LLM</b><span>writes the reply</span></div>
+      <svg class="arrow" viewBox="0 0 44 24"><path d="M2 12H36M28 4l10 8-10 8" stroke="#2563EB" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="node dashed"><b>Reply</b><span>public or private?</span></div>
+    </div>
+    <div class="legend" style="margin-top:14px">
+      <span><i style="display:inline-block;width:26px;height:18px;border:2px solid #1E3A8A;border-radius:5px;background:#fff"></i>Known</span>
+      <span><i style="display:inline-block;width:26px;height:18px;border:2px dashed #475569;border-radius:5px;background:#fff"></i>Assumed, unverified</span>
+    </div>
+
+    <div class="cards1">
+      <div class="card">
+        <div><span class="chip fact">Fact · Symptom</span></div>
+        <div class="msg">
+          <div class="avatar">B</div>
+          <div>
+            <div class="who">Onboarding bot · #onboarding-cohort</div>
+            <div class="txt">Hi Alex, your visa document is still missing.</div>
+          </div>
+        </div>
+        <div class="seen">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#1E3A8A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          Visible to everyone in the channel
+        </div>
+      </div>
+      <div class="card">
+        <div><span class="chip fact">Fact · Impact</span></div>
+        <div class="big">Visa paperwork status shown to a cohort</div>
+        <div><span class="chip assumed">Assumed</span></div>
+        <div class="small">Other people affected: unknown. Two more leaks reported, not confirmed.</div>
+      </div>
+      <div class="card">
+        <div><span class="chip action">Contained</span></div>
+        <div class="checks">
+          <div><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>Replies in private DMs only</div>
+          <div><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>Document index suspended</div>
+          <div><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>Logs locked down</div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span>HR-onboarding assistant · Privacy failure</span><span>1 / 3</span></div>
+  </section>
+
+  <!-- SLIDE 2 -->
+  <section class="slide" id="s2">
+    <p class="eyebrow">2 · Why we think so</p>
+    <h1>Six possible causes, none verified yet</h1>
+    <p class="sub">Ranked by how many symptoms each one explains</p>
+
+    <div class="body2">
+      <div>
+        <div class="card matrix">
+          <div class="mrow head">
+            <div class="rk" style="visibility:hidden"></div>
+            <div class="nm" style="font-weight:600;color:#475569;font-size:22px">Possible cause</div>
+            <div class="col">Public post</div>
+            <div class="col">Own data echoed</div>
+            <div class="col">Others' data leaked</div>
+            <div class="cf">Confidence</div>
+          </div>
+          <div class="mrow"><div class="rk">1</div><div class="nm">Replies go to the channel</div><div class="col"><i class="dot full"></i></div><div class="col"><i class="dot"></i></div><div class="col"><i class="dot"></i></div><div class="cf">Med-High</div></div>
+          <div class="mrow"><div class="rk">2</div><div class="nm">API returns the full profile</div><div class="col"><i class="dot half"></i></div><div class="col"><i class="dot full"></i></div><div class="col"><i class="dot"></i></div><div class="cf">Medium</div></div>
+          <div class="mrow"><div class="rk">3</div><div class="nm">Index holds real records</div><div class="col"><i class="dot"></i></div><div class="col"><i class="dot"></i></div><div class="col"><i class="dot full"></i></div><div class="cf">Medium</div></div>
+          <div class="mrow"><div class="rk">4</div><div class="nm">Memory mixes users</div><div class="col"><i class="dot"></i></div><div class="col"><i class="dot half"></i></div><div class="col"><i class="dot half"></i></div><div class="cf">Low-Med</div></div>
+          <div class="mrow"><div class="rk">5</div><div class="nm">No per-user authorization</div><div class="col"><i class="dot"></i></div><div class="col"><i class="dot"></i></div><div class="col"><i class="dot half"></i></div><div class="cf">Low-Med</div></div>
+          <div class="mrow"><div class="rk">6</div><div class="nm">Injected instructions</div><div class="col"><i class="dot half"></i></div><div class="col"><i class="dot half"></i></div><div class="col"><i class="dot half"></i></div><div class="cf">Low</div></div>
+        </div>
+        <div class="legend">
+          <span><i class="dot full"></i>Likely explains</span>
+          <span><i class="dot half"></i>Could contribute</span>
+          <span><i class="dot"></i>No link</span>
+        </div>
+      </div>
+
+      <div class="side">
+        <div class="card">
+          <div class="lab">Evidence so far</div>
+          <div class="t">One public post. The rest is reported, not seen.</div>
+        </div>
+        <div class="card">
+          <div class="lab">Still missing</div>
+          <div class="tags"><span>Reply routing</span><span>API payload</span><span>Prompt sent to model</span><span>Index contents</span></div>
+        </div>
+        <div class="card next">
+          <div class="lab">Next test</div>
+          <div class="t">Trace one request</div>
+          <div class="s">Then replay it with test users</div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span>HR-onboarding assistant · Privacy failure</span><span>2 / 3</span></div>
+  </section>
+
+  <!-- SLIDE 3 -->
+  <section class="slide" id="s3">
+    <p class="eyebrow">3 · What we recommend</p>
+    <h1>Close the exposure, prove the cause, then fix</h1>
+    <span class="owner-chip">Decision owner: Head of People Ops, with Security</span>
+
+    <div class="steps">
+      <div class="card step">
+        <div class="num">1</div>
+        <h3>Contain</h3>
+        <p>Private replies only. Index suspended.</p>
+        <div class="owner">Platform · IT · HR</div>
+      </div>
+      <svg class="arrow" viewBox="0 0 44 24"><path d="M2 12H36M28 4l10 8-10 8" stroke="#2563EB" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="card step">
+        <div class="num">2</div>
+        <h3>Investigate</h3>
+        <p>Trace one request. Scan the index.</p>
+        <div class="owner">Platform · Security</div>
+      </div>
+      <svg class="arrow" viewBox="0 0 44 24"><path d="M2 12H36M28 4l10 8-10 8" stroke="#2563EB" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="card step">
+        <div class="num">3</div>
+        <h3>Correct</h3>
+        <p>Smallest fix the trace supports.</p>
+        <div class="owner">Owner of the failing part</div>
+      </div>
+      <svg class="arrow" viewBox="0 0 44 24"><path d="M2 12H36M28 4l10 8-10 8" stroke="#2563EB" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="card step">
+        <div class="num">4</div>
+        <h3>Prevent</h3>
+        <p>This failure becomes a test. Leak alert on.</p>
+        <div class="owner">Platform · Security</div>
+      </div>
+    </div>
+
+    <div class="tiles">
+      <div class="tile"><div class="lab">Recovered when</div><div class="t">Original case passes. Zero leaks in the test set.</div></div>
+      <div class="tile"><div class="lab">Stop rule</div><div class="t">One confirmed leak switches it off.</div></div>
+      <div class="tile"><div class="lab">Would change this</div><div class="t">Exposure beyond the channel: pause everything.</div></div>
+    </div>
+    <div class="foot"><span>HR-onboarding assistant · Privacy failure</span><span>3 / 3</span></div>
+  </section>
+
+</div>
+</div>
+
+<div id="notes" role="region" aria-label="Speaker notes"></div>
+<div id="hint">← → navigate · N speaker notes · F fullscreen</div>
+
+<!-- Speaker notes (about 4 minutes in total). Press N to show them. -->
+<div class="notes-src" id="n1">Here is what I worked with. The system is an HR-onboarding assistant that lives in Slack or Teams. It guides new hires through their tasks and answers policy questions, so it sits right next to very sensitive HR data. The failure I analysed is a privacy failure. This is the path a request takes: a message arrives in the channel, the orchestrator pulls data from the HR checklist, the document index and its memory, the model writes a reply, and the reply goes back to the channel. Solid boxes are things I know exist. Dashed boxes are where I am assuming: what those stores contain, and who can see the reply. The fact is this: the bot posted a hire's missing visa document in the shared cohort channel, where everyone could read it. Two more leaks are reported but not confirmed: a hire's own address and tax details repeated back, and real employee names and pay showing up in policy answers. A disclosure cannot be undone, so we contained first: private messages only, the document index suspended after a snapshot, and logs locked down.</div>
+<div class="notes-src" id="n2">Here are six possible causes, ranked. The columns are the three symptoms, and the dots show which symptom each cause could explain: a full dot means it likely explains it, a half dot means it could contribute, an empty dot means no link. Ranking is provisional. Number one, the bot's replies go to the channel. It is the only cause I can see directly, because the post is public. But it only explains where the message appeared, not why it contained sensitive details. Number two, the HR API returns the full profile and the raw payload goes into the prompt. That matches the bot repeating addresses and tax details. Number three, the document index holds real employee records. That matches real names and pay in policy answers. Then memory that mixes users, missing per-user authorization, and injected instructions. Those rank lower because nothing points to a specific flaw yet, but a shared channel and an unfiltered drive keep them plausible. I did not list hallucination: the problem is that real data is disclosed, not that data is invented. Evidence so far is one public post. The next test is a trace of one request: where the reply was routed, what the API returned, and what the model was given. That single trace separates most of these causes.</div>
+<div class="notes-src" id="n3">The recommendation is to close the exposure, prove the cause, and only then fix. The decision owner is the Head of People Operations, with Security. Step one, contain: private replies only, and the document index suspended after we snapshot it, so the evidence is preserved. Step two, investigate: trace one request and scan the index for real records, while Security checks who else could have seen the posts. Step three, correct: apply the smallest fix the trace supports. If the API sends the whole profile, we cut the payload down to task name, status and due date. If the index holds real records, we rebuild it from an approved list of general documents. Step four, prevent: this failure becomes a permanent test, with an alert if personal data appears in a reply. We call it recovered when the original case passes and a cross-user test set shows zero leaks. That is a release gate, not proof of safety. One confirmed leak switches the feature off. I deliberately defer enterprise-wide permission syncing and a custom red-team suite: once the corpus is a curated list of general documents, they add cost for little risk reduction. Two findings would change my advice: exposure beyond the channel, which pushes toward pausing everything, or a trace showing a broad service account returning other people's data.</div>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var rail = Array.prototype.slice.call(document.querySelectorAll('#rail button'));
+  var stage = document.getElementById('stage');
+  var notes = document.getElementById('notes');
+  var idx = 0;
+
+  function fit() {
+    var availH = window.innerHeight - (notes.classList.contains('show') ? notes.offsetHeight : 0);
+    var s = Math.min(window.innerWidth / 1920, availH / 1080);
+    stage.style.transform = 'scale(' + s + ')';
+    stage.style.marginTop = ((availH - 1080) / 2 > 0 ? 0 : 0) + 'px';
+    document.getElementById('viewport').style.bottom = (window.innerHeight - availH) + 'px';
+  }
+
+  function show(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach(function (s, k) { s.classList.toggle('on', k === idx); });
+    rail.forEach(function (b, k) { b.classList.toggle('on', k === idx); });
+    var src = document.getElementById('n' + (idx + 1));
+    notes.innerHTML = '<small>Speaker notes · slide ' + (idx + 1) + '</small>' + (src ? src.textContent : '');
+    try { history.replaceState(null, '', '#' + (idx + 1)); } catch (e) {}
+    fit();
+  }
+
+  rail.forEach(function (b) { b.addEventListener('click', function () { show(+b.getAttribute('data-go')); }); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(idx + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(idx - 1); }
+    else if (e.key === 'n' || e.key === 'N') { notes.classList.toggle('show'); fit(); }
+    else if (e.key === 'f' || e.key === 'F') { if (document.fullscreenElement) { document.exitFullscreen(); } else { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); } }
+    else if (e.key === 'Home') { show(0); }
+    else if (e.key === 'End') { show(slides.length - 1); }
+  });
+  window.addEventListener('resize', fit);
+
+  var start = parseInt((location.hash || '').replace('#', ''), 10);
+  show(isNaN(start) ? 0 : start - 1);
+})();
+</script>
+</body>
+</html>
